@@ -1,0 +1,83 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "sqlite" url = env("DATABASE_URL") }
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  passwordHash  String
+  image         String?
+  role          Role     @default(USER)
+  emailOptIn    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  announcements Announcement[] @relation("AuthorAnnouncements")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  body       String
+  createdAt  DateTime @default(now())
+  author     User     @relation("AuthorAnnouncements", fields: [authorId], references: [id])
+  authorId   String
+  published  Boolean  @default(true)
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Int
+  url         String
+  image       String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model NewsletterSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+enum Role { USER MOD ADMIN }
